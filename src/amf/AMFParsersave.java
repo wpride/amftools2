@@ -1,5 +1,6 @@
 package amf;
 
+import java.nio.FloatBuffer;
 import com.jme3.app.SimpleApplication;
 import com.jme3.font.BitmapFont;
 import com.jme3.font.BitmapText;
@@ -9,10 +10,10 @@ import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
-import com.jme3.scene.VertexBuffer;
 import com.jme3.scene.VertexBuffer.Type;
 import com.jme3.system.AppSettings;
 import com.jme3.util.BufferUtils;
@@ -30,7 +31,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 
-public class AMFParser extends SimpleApplication{
+public class AMFParsersave extends SimpleApplication{
 
 	private String filepath;
         private Material mat;
@@ -120,7 +121,7 @@ public class AMFParser extends SimpleApplication{
 		return null;
 	}
 
-	public AMFParser(String filepath){
+	public AMFParsersave(String filepath){
 		this.filepath = filepath;
 	}
         
@@ -149,6 +150,11 @@ public class AMFParser extends SimpleApplication{
 		rootNode.attachChild(pivot); // put this node in the scene
 
 		Vector3f [] vertices;
+		Vector2f[] texCoord = new Vector2f[4];
+		texCoord[0] = new Vector2f(0,0);
+		texCoord[1] = new Vector2f(1,0);
+		texCoord[2] = new Vector2f(0,1);
+		texCoord[3] = new Vector2f(1,1);
                 
 		ArrayList<Integer> mIndices = new ArrayList<Integer>();
                 
@@ -163,45 +169,6 @@ public class AMFParser extends SimpleApplication{
                         NodeList mList = getElements(amfFile,"triangle");
 
 			vertices = new Vector3f[nList.getLength()];
-                        
-                        for (int temp = 0; temp < mList.getLength(); temp++) {
-
-				Node mNode = mList.item(temp);
-                                
-				if (mNode.getNodeType() == Node.ELEMENT_NODE) {
-
-					Element eElement = (Element) mNode;
-
-					int v1 = Integer.parseInt(getTagValue("v1", eElement));
-					int v2 = Integer.parseInt(getTagValue("v2", eElement));
-					int v3 = Integer.parseInt(getTagValue("v3", eElement));
-                                        try{
-                                            float r = Float.parseFloat(getTagValue("r", eElement));
-                                            float g = Float.parseFloat(getTagValue("g", eElement));
-                                            float b = Float.parseFloat(getTagValue("b", eElement));
-                                            float a = Float.parseFloat(getTagValue("a", eElement));
-                                            mColors.add(r);
-                                            mColors.add(g);
-                                            mColors.add(b);
-                                            mColors.add(a);
-                                            mColors.add(r);
-                                            mColors.add(g);
-                                            mColors.add(b);
-                                            mColors.add(a);
-                                            mColors.add(r);
-                                            mColors.add(g);
-                                            mColors.add(b);
-                                            mColors.add(a);
-                                        } catch(NullPointerException npe){
-                                            System.out.println("no color");
-                                        }
-
-					mIndices.add(v1);
-					mIndices.add(v2);
-					mIndices.add(v3);
-                                        
-				}
-			}
 
 			for (int temp = 0; temp < nList.getLength(); temp++) {
 				Node oNode = nList.item(temp);
@@ -236,7 +203,6 @@ public class AMFParser extends SimpleApplication{
 							xVal = Float.parseFloat(getTagValue("x", eElement));
 							yVal = Float.parseFloat(getTagValue("y", eElement));
 							zVal = Float.parseFloat(getTagValue("z", eElement));
-                                                        vertices[temp] = new Vector3f(xVal, yVal, zVal);
 							COORD_BOOL = true;
 						}
 						if(pName == "color"){
@@ -251,56 +217,74 @@ public class AMFParser extends SimpleApplication{
 						}
 
 					}
+
+					if(COORD_BOOL){
+						AMFCoordinate newCoordinate = new AMFCoordinate(xVal, yVal, zVal);
+						vertices[temp] = new Vector3f(xVal, yVal, zVal);
+						if(NORM_BOOL){
+							newCoordinate.setNormals(nxVal,nyVal,nzVal);
+
+						}
+						if(COLOR_BOOL){
+							newCoordinate.setColors(rVal,gVal,bVal,aVal);
+						}
+					}
+
 				}
 			}
-                        
-                        Vector3f [] newVertices = new Vector3f[mIndices.size()];
-                     
-                        ArrayList<Integer> indices = new ArrayList<Integer>();
-                        
-                        for(int i=0; i< mIndices.size(); i+=3){
-                            System.out.println(i);
-                            Integer m = mIndices.get(i);
-                            Integer n = mIndices.get(i+1);
-                            Integer o = mIndices.get(i+2);
-                            Vector3f oldVertexM = vertices[m.intValue()];
-                            Vector3f oldVertexN = vertices[n.intValue()];
-                            Vector3f oldVertexO = vertices[o.intValue()];
-                            newVertices[i] = new Vector3f(oldVertexM.getX(), oldVertexM.getY(), oldVertexM.getZ());
-                            newVertices[i+1] = new Vector3f(oldVertexN.getX(), oldVertexN.getY(), oldVertexN.getZ());
-                            newVertices[i+2] = new Vector3f(oldVertexO.getX(), oldVertexO.getY(), oldVertexO.getZ());
-                            
-                            System.out.println(newVertices[i]);
-                            
-                            indices.add(i);
-                            indices.add(i+1);
-                            indices.add(i+2);
 
-                            
-                        }
-                        
-                        int[] indexes = new int[indices.size()];
-                        for(int i=0; i<indices.size();i++){
-                            System.out.println("index "+ i + " " + indices.get(i));
-                            indexes[i] = indices.get(i);
-                        }
-                        
-                        System.out.println("indexes: " + indexes.length);
-                        System.out.println("colors: " + mColors.size());
-                        System.out.println("vertexes: " + newVertices.length);
-                        
-                        System.out.println("nv: " + newVertices);
+			texCoord = new Vector2f[mList.getLength()*3];
 
-			mesh.setBuffer(VertexBuffer.Type.Position, 3, BufferUtils.createFloatBuffer(newVertices));
+			for (int temp = 0; temp < mList.getLength(); temp++) {
+                            
+                               
+
+				Node mNode = mList.item(temp);
+                                
+                                System.out.println("type " + mNode.getNodeType());
+                                System.out.println("name: " + mNode.getNodeName());
+                                
+				if (mNode.getNodeType() == Node.ELEMENT_NODE) {
+
+					Element eElement = (Element) mNode;
+
+					int v1 = Integer.parseInt(getTagValue("v1", eElement));
+					int v2 = Integer.parseInt(getTagValue("v2", eElement));
+					int v3 = Integer.parseInt(getTagValue("v3", eElement));
+                                        try{
+                                            float r = Float.parseFloat(getTagValue("r", eElement));
+                                            float g = Float.parseFloat(getTagValue("g", eElement));
+                                            float b = Float.parseFloat(getTagValue("b", eElement));
+                                            float a = Float.parseFloat(getTagValue("a", eElement));
+                                            mColors.add(r);
+                                            mColors.add(g);
+                                            mColors.add(b);
+                                            mColors.add(a);
+                                        } catch(NullPointerException npe){
+                                            System.out.println("no color");
+                                        }
+
+					mIndices.add(v1);
+					mIndices.add(v2);
+					mIndices.add(v3);
+                                        
+				}
+			}
+
+			int[] indexes = new int[mIndices.size()];
+			for(int i=0; i< mIndices.size() ; i++){
+				indexes[i] = mIndices.get(i).intValue();
+			}
+
+			mesh.setBuffer(Type.Position, 3, BufferUtils.createFloatBuffer(vertices));
 			//mesh.setBuffer(Type.TexCoord, 2, BufferUtils.createFloatBuffer(texCoord));
-			mesh.setBuffer(VertexBuffer.Type.Index, 3, BufferUtils.createIntBuffer(indexes));
+			mesh.setBuffer(Type.Index,    3, BufferUtils.createIntBuffer(indexes));
 
 			mesh.updateBound();
 
 			Geometry geo = new Geometry("OurMesh", mesh); // using our custom mesh object
 			mat = new Material(assetManager, 
 					"Common/MatDefs/Misc/Unshaded.j3md");
-                        
                         if(mColors.size() > 0){
                             float[] colors = new float[mColors.size()];
                             for(int i=0;i<mColors.size(); i++) {
