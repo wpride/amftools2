@@ -7,6 +7,8 @@ import com.jme3.font.Rectangle;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.light.AmbientLight;
+import com.jme3.light.DirectionalLight;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
@@ -36,6 +38,7 @@ public class AMFParser extends SimpleApplication{
 	private Material mat;
 	private BitmapText txt;
 	boolean cursorCaptive = true;
+        public static boolean normalsSet = true;
 
 	public static void main(String[] args){
 
@@ -137,7 +140,7 @@ public class AMFParser extends SimpleApplication{
 		}
 	}
 
-	public void populateVertices(NodeList nList, Vector3f[] vertices){
+	public void populateVertices(NodeList nList, Vector3f[] vertices, Vector3f[] normals){
 		for (int temp = 0; temp < nList.getLength(); temp++) {
 			Node oNode = nList.item(temp);
 
@@ -148,6 +151,7 @@ public class AMFParser extends SimpleApplication{
 				int oLength = oList.getLength();
 
 				float xVal=0,yVal=0,zVal=0;
+                                float nxVal=0,nyVal=0,nzVal=0;
 
 				for(int i=0;i<oLength;i++){
 					Node pNode = oList.item(i);
@@ -159,6 +163,13 @@ public class AMFParser extends SimpleApplication{
 						zVal = Float.parseFloat(getTagValue("z", eElement));
 						vertices[temp] = new Vector3f(xVal, yVal, zVal);
 					}
+					if(pName == "normal"){
+						Element eElement = (Element) pNode;
+						nxVal = Float.parseFloat(getTagValue("nx", eElement));
+						nyVal = Float.parseFloat(getTagValue("ny", eElement));
+						nzVal = Float.parseFloat(getTagValue("nz", eElement));
+                                                normals[temp] = new Vector3f(xVal, yVal, zVal);
+					}                                        
 				}
 			}
 		}
@@ -208,13 +219,19 @@ public class AMFParser extends SimpleApplication{
 		}
 	}
 
-	public void setFinalVertices(ArrayList<Integer> mIndices, ArrayList<Integer> indices, Vector3f[] vertices, Vector3f newVertices[]){
+	public void setFinalVertices(ArrayList<Integer> mIndices, ArrayList<Integer> indices, Vector3f[] vertices, Vector3f newVertices[], Vector3f[] normals, Vector3f[] newNormals){
 
 		for(int i=0; i< mIndices.size(); i++){
 
 			Integer m = mIndices.get(i);
 			Vector3f oldVertexM = vertices[m.intValue()];
+                        Vector3f oldNormalM = normals[m.intValue()];
 			newVertices[i] = new Vector3f(oldVertexM.getX(), oldVertexM.getY(), oldVertexM.getZ());
+                        try{
+                            newNormals[i] = new Vector3f(oldNormalM.getX(), oldNormalM.getY(), oldNormalM.getZ());
+                        } catch(NullPointerException npe){
+                            normalsSet = false;
+                        }
 			indices.add(i);
 		}
 	}
@@ -229,8 +246,11 @@ public class AMFParser extends SimpleApplication{
 		/** Create a pivot node at (0,0,0) and attach it to the root node */
 		com.jme3.scene.Node pivot = new com.jme3.scene.Node("pivot");
 		rootNode.attachChild(pivot); // put this node in the scene
+                
+                boolean hasNormals = false;
 
 		Vector3f [] vertices;
+                Vector3f [] normals;
 
 		ArrayList<Integer> mIndices = new ArrayList<Integer>();
 
@@ -244,43 +264,87 @@ public class AMFParser extends SimpleApplication{
 		NodeList mList = getElements(amfFile,"triangle");
 
 		vertices = new Vector3f[nList.getLength()];
+                normals = new Vector3f[nList.getLength()];
 
 		populateIndicesColors(mList, mColors, mIndices);
 
-		populateVertices(nList, vertices);
+		populateVertices(nList, vertices, normals);
 
 		Vector3f [] newVertices = new Vector3f[mIndices.size()];
+                Vector3f[] newNormals = new Vector3f[mIndices.size()];
 
 		ArrayList<Integer> indices = new ArrayList<Integer>();
 
-		setFinalVertices(mIndices, indices, vertices, newVertices);
+		setFinalVertices(mIndices, indices, vertices, newVertices, normals, newNormals);
 
 		int[] indexes = new int[indices.size()];
-
+                
 		for(int i=0; i<indices.size();i++){
 			indexes[i] = indices.get(i);
 		}
-
+               
 		mesh.setBuffer(VertexBuffer.Type.Position, 3, BufferUtils.createFloatBuffer(newVertices));
 		//mesh.setBuffer(Type.TexCoord, 2, BufferUtils.createFloatBuffer(texCoord));
 		mesh.setBuffer(VertexBuffer.Type.Index, 3, BufferUtils.createIntBuffer(indexes));
+                //mesh.setBuffer(VertexBuffer.Type.Normal, 3, BufferUtils.createFloatBuffer(newNormals));
 
 		mesh.updateBound();
 
 		Geometry geo = new Geometry("OurMesh", mesh); // using our custom mesh object
-		mat = new Material(assetManager, 
-				"Common/MatDefs/Misc/Unshaded.j3md");
+                
+                //
+                
+                if(normalsSet){
+                    
+                    System.out.println("normals");
+                    
+                    mat = new Material(assetManager, //"Common/MatDefs/Misc/ShowNormals.j3md");
+				//"Common/MatDefs/Misc/Unshaded.j3md");
+                        "Common/MatDefs/Light/Lighting.j3md");
+                    
+                    mat.setBoolean("UseMaterialColors", true);
+                    mat.setColor("Diffuse", ColorRGBA.Blue);
+                    mat.setColor("Ambient", ColorRGBA.Red); //Using white here, but shouldn’t matter that much
+                    mat.setColor("Diffuse", ColorRGBA.White);
+                    mat.setColor("Specular", ColorRGBA.Yellow); //Using yellow for example
+                    mat.setBoolean("VertexLighting", true);
+                    
+                    mesh.setBuffer(VertexBuffer.Type.Normal, 3, BufferUtils.createFloatBuffer(newNormals));
+                
+                    DirectionalLight light=new DirectionalLight();
+                    light.setDirection(new Vector3f(-1, 0, -1).normalizeLocal());
+                    light.setColor(ColorRGBA.White);
+                    getRootNode().addLight(light);
+                
+                    DirectionalLight light2=new DirectionalLight();
+                    light.setDirection(new Vector3f(1, 0, 1).normalizeLocal());
+                    light.setColor(ColorRGBA.White);
+                    getRootNode().addLight(light);
 
-		if(mColors.size() > 0){
-			float[] colors = new float[mColors.size()];
-			for(int i=0;i<mColors.size(); i++) {
-				colors[i] = mColors.get(i);
-			}
-			mesh.setBuffer(Type.Color, 4, colors);
-			mat.setBoolean("VertexColor", true);
+                    AmbientLight ambient = new AmbientLight();
+                    ambient.setColor(ColorRGBA.White/*.mult(0.5f)*/);
+                    getRootNode().addLight(ambient);
+                } else{
+                       System.out.println("no normals");
+                       mat = new Material(assetManager,
+				"Common/MatDefs/Misc/Unshaded.j3md");
+                        if(mColors.size() > 0){
+                            System.out.println("Colors");
+                            float[] colors = new float[mColors.size()];
+                            for(int i=0;i<mColors.size(); i++) {
+                    		colors[i] = mColors.get(i);
+                            }
+                            mesh.setBuffer(Type.Color, 4, colors);
+                            mat.setBoolean("VertexColor", true);
 		} else{
-			mat.setColor("Color", ColorRGBA.Blue);
+			//mat.setColor("Color", ColorRGBA.Blue);
+                    
 		}
+                }
+                
+
+                //
+                
 
 		mat.getAdditionalRenderState().setWireframe(true);
 
