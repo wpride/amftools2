@@ -165,6 +165,23 @@ public class AMFParser extends SimpleApplication{
 
 	}
 
+	public void tripleColors(ArrayList<Float> mColors, float r, float g, float b, float a){
+		for(int i=0; i<3; i++){
+			mColors.add(r);
+			mColors.add(g);
+			mColors.add(b);
+			mColors.add(a);
+		}
+	}
+
+	public void addColors(ArrayList<Float> mColors, Element eElement){
+		float r = Float.parseFloat(getTagValue("r", eElement));
+		float g = Float.parseFloat(getTagValue("g", eElement));
+		float b = Float.parseFloat(getTagValue("b", eElement));
+		float a = Float.parseFloat(getTagValue("a", eElement));
+		tripleColors(mColors, r, g, b, a);
+	}
+
 	public void populateIndicesColors(NodeList mList, ArrayList<Float> mColors, ArrayList<Integer> mIndices){
 		for (int temp = 0; temp < mList.getLength(); temp++) {
 
@@ -178,22 +195,7 @@ public class AMFParser extends SimpleApplication{
 				int v2 = Integer.parseInt(getTagValue("v2", eElement));
 				int v3 = Integer.parseInt(getTagValue("v3", eElement));
 				try{
-					float r = Float.parseFloat(getTagValue("r", eElement));
-					float g = Float.parseFloat(getTagValue("g", eElement));
-					float b = Float.parseFloat(getTagValue("b", eElement));
-					float a = Float.parseFloat(getTagValue("a", eElement));
-					mColors.add(r);
-					mColors.add(g);
-					mColors.add(b);
-					mColors.add(a);
-					mColors.add(r);
-					mColors.add(g);
-					mColors.add(b);
-					mColors.add(a);
-					mColors.add(r);
-					mColors.add(g);
-					mColors.add(b);
-					mColors.add(a);
+                                    addColors(mColors, eElement);
 				} catch(NullPointerException npe){
 					System.out.println("no color");
 				}
@@ -207,7 +209,7 @@ public class AMFParser extends SimpleApplication{
 	}
 
 	public void setFinalVertices(ArrayList<Integer> mIndices, ArrayList<Integer> indices, Vector3f[] vertices, Vector3f newVertices[]){
-            
+
 		for(int i=0; i< mIndices.size(); i++){
 
 			Integer m = mIndices.get(i);
@@ -254,7 +256,7 @@ public class AMFParser extends SimpleApplication{
 		setFinalVertices(mIndices, indices, vertices, newVertices);
 
 		int[] indexes = new int[indices.size()];
-                
+
 		for(int i=0; i<indices.size();i++){
 			indexes[i] = indices.get(i);
 		}
