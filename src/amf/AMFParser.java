@@ -137,34 +137,36 @@ public class AMFParser extends SimpleApplication{
             }
         }
         
-        public static NodeList getElements(File mFile, String mTag){
-            Document mDocument = getDocument(mFile);
-            return mDocument.getElementsByTagName(mTag);
+        public void populateVertices(NodeList nList, Vector3f[] vertices){
+            			for (int temp = 0; temp < nList.getLength(); temp++) {
+				Node oNode = nList.item(temp);
+
+				if (oNode.getNodeType() == Node.ELEMENT_NODE) {
+
+					NodeList oList = oNode.getChildNodes();
+
+					int oLength = oList.getLength();
+
+					float xVal=0,yVal=0,zVal=0;
+
+					for(int i=0;i<oLength;i++){
+						Node pNode = oList.item(i);
+						String pName = pNode.getNodeName();
+						if(pName == "coordinates"){
+							Element eElement = (Element) pNode;
+							xVal = Float.parseFloat(getTagValue("x", eElement));
+							yVal = Float.parseFloat(getTagValue("y", eElement));
+							zVal = Float.parseFloat(getTagValue("z", eElement));
+                                                        vertices[temp] = new Vector3f(xVal, yVal, zVal);
+						}
+					}
+				}
+			}
+            
         }
-
-	public void simpleInitApp() {
-            System.out.println("derpy derp");
-		/** Create a pivot node at (0,0,0) and attach it to the root node */
-		com.jme3.scene.Node pivot = new com.jme3.scene.Node("pivot");
-		rootNode.attachChild(pivot); // put this node in the scene
-
-		Vector3f [] vertices;
-                
-		ArrayList<Integer> mIndices = new ArrayList<Integer>();
-                
-                ArrayList<Float> mColors = new ArrayList<Float>();
-
-		Mesh mesh = new Mesh();
-
-		try{
-
-			File amfFile = new File(filepath);
-			NodeList nList = getElements(amfFile, "vertex");
-                        NodeList mList = getElements(amfFile,"triangle");
-
-			vertices = new Vector3f[nList.getLength()];
-                        
-                        for (int temp = 0; temp < mList.getLength(); temp++) {
+        
+        public void populateIndicesColors(NodeList mList, ArrayList<Float> mColors, ArrayList<Integer> mIndices){
+                                    for (int temp = 0; temp < mList.getLength(); temp++) {
 
 				Node mNode = mList.item(temp);
                                 
@@ -202,57 +204,38 @@ public class AMFParser extends SimpleApplication{
                                         
 				}
 			}
+        }
+        
+        public static NodeList getElements(File mFile, String mTag){
+            Document mDocument = getDocument(mFile);
+            return mDocument.getElementsByTagName(mTag);
+        }
 
-			for (int temp = 0; temp < nList.getLength(); temp++) {
-				Node oNode = nList.item(temp);
+	public void simpleInitApp() {
+            System.out.println("derpy derp");
+		/** Create a pivot node at (0,0,0) and attach it to the root node */
+		com.jme3.scene.Node pivot = new com.jme3.scene.Node("pivot");
+		rootNode.attachChild(pivot); // put this node in the scene
 
-				if (oNode.getNodeType() == Node.ELEMENT_NODE) {
+		Vector3f [] vertices;
+                
+		ArrayList<Integer> mIndices = new ArrayList<Integer>();
+                
+                ArrayList<Float> mColors = new ArrayList<Float>();
 
-					NodeList oList = oNode.getChildNodes();
+		Mesh mesh = new Mesh();
 
-					int oLength = oList.getLength();
+		try{
 
-					boolean NORM_BOOL = false;
-					boolean COORD_BOOL = false;
-					boolean COLOR_BOOL = false;
+			File amfFile = new File(filepath);
+			NodeList nList = getElements(amfFile, "vertex");
+                        NodeList mList = getElements(amfFile,"triangle");
 
-					float xVal=0,yVal=0,zVal=0;
-					float nxVal=0, nyVal=0, nzVal=0;
-					float rVal=0, gVal=0, bVal=0, aVal=0;
+			vertices = new Vector3f[nList.getLength()];
+                        
+                        populateIndicesColors(mList, mColors, mIndices);
 
-					for(int i=0;i<oLength;i++){
-						Node pNode = oList.item(i);
-						String pName = pNode.getNodeName();
-						//Element eElement = (Element) pNode;
-						if(pName == "normal"){
-							Element eElement = (Element) pNode;
-							nxVal = Float.parseFloat(getTagValue("nx", eElement));
-							nyVal = Float.parseFloat(getTagValue("ny", eElement));
-							nzVal = Float.parseFloat(getTagValue("nz", eElement));
-							NORM_BOOL = true;
-						}
-						if(pName == "coordinates"){
-							Element eElement = (Element) pNode;
-							xVal = Float.parseFloat(getTagValue("x", eElement));
-							yVal = Float.parseFloat(getTagValue("y", eElement));
-							zVal = Float.parseFloat(getTagValue("z", eElement));
-                                                        vertices[temp] = new Vector3f(xVal, yVal, zVal);
-							COORD_BOOL = true;
-						}
-						if(pName == "color"){
-                                                   
-							Element eElement = (Element) pNode;
-							rVal = Float.parseFloat(getTagValue("r", eElement));
-							gVal = Float.parseFloat(getTagValue("g", eElement));
-							bVal = Float.parseFloat(getTagValue("b", eElement));
-							aVal = Float.parseFloat(getTagValue("a", eElement));
-                                                        System.out.println("r:" + rVal);
-							COLOR_BOOL = true;
-						}
-
-					}
-				}
-			}
+			populateVertices(nList, vertices);
                         
                         Vector3f [] newVertices = new Vector3f[mIndices.size()];
                      
