@@ -208,22 +208,12 @@ public class AMFParser extends SimpleApplication{
 
 	public void setFinalVertices(ArrayList<Integer> mIndices, ArrayList<Integer> indices, Vector3f[] vertices, Vector3f newVertices[]){
             
-		for(int i=0; i< mIndices.size(); i+=3){
-                    
+		for(int i=0; i< mIndices.size(); i++){
+
 			Integer m = mIndices.get(i);
-			Integer n = mIndices.get(i+1);
-			Integer o = mIndices.get(i+2);
 			Vector3f oldVertexM = vertices[m.intValue()];
-			Vector3f oldVertexN = vertices[n.intValue()];
-			Vector3f oldVertexO = vertices[o.intValue()];
 			newVertices[i] = new Vector3f(oldVertexM.getX(), oldVertexM.getY(), oldVertexM.getZ());
-			newVertices[i+1] = new Vector3f(oldVertexN.getX(), oldVertexN.getY(), oldVertexN.getZ());
-			newVertices[i+2] = new Vector3f(oldVertexO.getX(), oldVertexO.getY(), oldVertexO.getZ());
-
 			indices.add(i);
-			indices.add(i+1);
-			indices.add(i+2);
-
 		}
 	}
 
