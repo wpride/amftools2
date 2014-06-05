@@ -332,6 +332,7 @@ public class AMFParser extends SimpleApplication{
                 
                 initKeys();
                 flyCam.setDragToRotate(true);
+                flyCam.setMoveSpeed(7);
                 
 	}
 	public String getTagValue(String sTag, Element eElement) {
