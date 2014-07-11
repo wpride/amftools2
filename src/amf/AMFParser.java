@@ -1,7 +1,6 @@
 package amf;
 
 import com.jme3.app.SimpleApplication;
-import com.jme3.app.state.VideoRecorderAppState;
 import com.jme3.font.BitmapFont;
 import com.jme3.font.BitmapText;
 import com.jme3.font.Rectangle;
@@ -256,8 +255,6 @@ public class AMFParser extends SimpleApplication{
 		ArrayList<Integer> mIndices = new ArrayList<Integer>();
 
 		ArrayList<Float> mColors = new ArrayList<Float>();
-                
-                ArrayList<Byte> mBytes = new ArrayList<Byte>();
 
 		Mesh mesh = new Mesh();
 
@@ -265,7 +262,6 @@ public class AMFParser extends SimpleApplication{
 
 		NodeList nList = getElements(amfFile, "vertex");
 		NodeList mList = getElements(amfFile,"triangle");
-                NodeList oList = getElements(amfFile,"texture");
 
 		vertices = new Vector3f[nList.getLength()];
                 normals = new Vector3f[nList.getLength()];
@@ -341,7 +337,7 @@ public class AMFParser extends SimpleApplication{
                             mesh.setBuffer(Type.Color, 4, colors);
                             mat.setBoolean("VertexColor", true);
 		} else{
-			mat.setColor("Color", ColorRGBA.Blue);
+			//mat.setColor("Color", ColorRGBA.Blue);
                     
 		}
                 }
@@ -362,8 +358,6 @@ public class AMFParser extends SimpleApplication{
 		txt.setText("Click and Drag to rotate camera. Use arrow keys to move camera. JK to toggle wireframe/solid. X to close this text.");
 		txt.setLocalTranslation(0, txt.getHeight(), 0);
 		guiNode.attachChild(txt);
-                
-                stateManager.attach(new VideoRecorderAppState());
 
 
 		initKeys();
